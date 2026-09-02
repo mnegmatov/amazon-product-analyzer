@@ -3,7 +3,8 @@ import { Header } from './components/Header.tsx';
 import { AnalyzerForm } from './components/AnalyzerForm.tsx';
 import { ResultDisplay } from './components/ResultDisplay.tsx';
 import { HistoryList, HistoryItem } from './components/HistoryList.tsx';
-import { ProductInput, ProductAnalysisResult } from './types.ts';
+import { ProductInput, ProductAnalysisResult, ProductData } from './types.ts';
+import { ProductDataCard } from './components/ProductDataCard.tsx';
 
 const STORAGE_KEY = 'amazon_product_analysis_history_v2';
 
@@ -19,6 +20,9 @@ export const App: React.FC = () => {
   });
 
   const [result, setResult] = useState<ProductAnalysisResult | null>(null);
+  const [productData, setProductData] = useState<ProductData | null>(null);
+  const [productLoading, setProductLoading] = useState(false);
+  const [productError, setProductError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -60,6 +64,30 @@ export const App: React.FC = () => {
       setInput((prev) => ({ ...prev, asin: trimmedAsin }));
     }
 
+    // 1. Fetch Amazon Product Data (MockProductDataProvider)
+    const fetchProductDetails = async (asinToFetch: string) => {
+      setProductLoading(true);
+      setProductError(null);
+      try {
+        const prodRes = await fetch(`/api/products/${encodeURIComponent(asinToFetch)}`, {
+          headers: { 'Accept': 'application/json' },
+        });
+        const prodData = await prodRes.json().catch(() => null);
+        if (!prodRes.ok) {
+          setProductError(prodData?.error || `Ошибка сервера при получении данных о товаре (${prodRes.status})`);
+        } else if (prodData) {
+          setProductData(prodData);
+        }
+      } catch (err: any) {
+        setProductError(`Не удалось соединиться с сервисом данных товара (${err?.message || 'Ошибка сети'}).`);
+      } finally {
+        setProductLoading(false);
+      }
+    };
+
+    fetchProductDetails(trimmedAsin);
+
+    // 2. Financial calculation (/api/products/analyze)
     setLoading(true);
     setErrors({});
 
@@ -135,6 +163,7 @@ export const App: React.FC = () => {
   const handleApplyPreset = (preset: ProductInput) => {
     setInput(preset);
     setErrors({});
+    setProductError(null);
   };
 
   const handleClearHistory = () => {
@@ -169,13 +198,19 @@ export const App: React.FC = () => {
               onSelect={(selected) => {
                 setInput(selected);
                 setErrors({});
+                setProductError(null);
               }}
               onClear={handleClearHistory}
             />
           </div>
 
           {/* Right Column: Visual Result & Hierarchy */}
-          <div className="lg:col-span-6 sticky top-20">
+          <div className="lg:col-span-6 sticky top-20 space-y-4">
+            <ProductDataCard
+              product={productData}
+              loading={productLoading}
+              error={productError}
+            />
             <ResultDisplay result={result} input={input} />
           </div>
         </div>
