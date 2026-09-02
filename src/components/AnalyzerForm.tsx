@@ -105,6 +105,33 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
       </div>
 
       <form onSubmit={onAnalyze} className="mt-4 space-y-4">
+        {/* ASIN Input */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-200 mb-1">
+            ASIN <span className="text-rose-400">*</span>
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="B08XYZ1234"
+              value={input.asin || ''}
+              onChange={(e) => handleChange('asin', e.target.value)}
+              className={`w-full px-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition font-mono uppercase ${
+                getFieldError('asin')
+                  ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
+                  : 'border-slate-800 focus:border-amber-500 focus:ring-amber-500/20'
+              }`}
+              required
+            />
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">10-значный идентификатор товара на Amazon (например, B08XYZ1234)</p>
+          {getFieldError('asin') && (
+            <p className="text-[11px] text-rose-400 mt-0.5 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" /> {getFieldError('asin')}
+            </p>
+          )}
+        </div>
+
         {/* Main Price Inputs: Purchase Price & Selling Price */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           {/* Цена закупки */}
@@ -271,7 +298,7 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
           </div>
         </div>
 
-        {/* Optional Title & ASIN Toggle */}
+        {/* Optional Title Toggle */}
         <div>
           <button
             type="button"
@@ -279,11 +306,11 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
             className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 py-1 transition cursor-pointer"
           >
             {showOptional ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            <span>{showOptional ? 'Скрыть название и ASIN' : 'Указать название или ASIN (опционально)'}</span>
+            <span>{showOptional ? 'Скрыть название товара' : 'Указать название товара (опционально)'}</span>
           </button>
 
           {showOptional && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 pt-2.5 border-t border-slate-800/60">
+            <div className="mt-2 pt-2.5 border-t border-slate-800/60">
               <div>
                 <label className="block text-[11px] text-slate-400 mb-1">
                   Название товара
@@ -294,18 +321,6 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
                   value={input.title || ''}
                   onChange={(e) => handleChange('title', e.target.value)}
                   className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] text-slate-400 mb-1">
-                  ASIN / Артикул
-                </label>
-                <input
-                  type="text"
-                  placeholder="B08XYZ1234"
-                  value={input.asin || ''}
-                  onChange={(e) => handleChange('asin', e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500 uppercase"
                 />
               </div>
             </div>

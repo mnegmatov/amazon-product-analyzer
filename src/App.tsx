@@ -41,6 +41,25 @@ export const App: React.FC = () => {
 
   const handleAnalyze = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+
+    const trimmedAsin = (typeof input.asin === 'string' ? input.asin : '').trim().toUpperCase();
+    const newErrors: Record<string, string> = {};
+
+    if (!trimmedAsin) {
+      newErrors.asin = 'ASIN обязателен для заполнения';
+    } else if (!/^[A-Z0-9]{10}$/.test(trimmedAsin)) {
+      newErrors.asin = 'ASIN должен содержать ровно 10 символов (буквы и цифры, например: B08XYZ1234)';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    if (input.asin !== trimmedAsin) {
+      setInput((prev) => ({ ...prev, asin: trimmedAsin }));
+    }
+
     setLoading(true);
     setErrors({});
 
