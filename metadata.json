@@ -1,0 +1,6 @@
+{
+  "name": "Amazon Product Analyzer",
+  "description": "Простой калькулятор прибыльности и оценка выгоды товаров для Amazon FBA на русском языке.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
