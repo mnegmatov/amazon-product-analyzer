@@ -1,9 +1,13 @@
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
+import { ProductDataProvider, MockProductDataProvider } from './src/services/productDataProvider.ts';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+
+// Data provider abstraction instance (currently using MockProductDataProvider)
+const productDataProvider: ProductDataProvider = new MockProductDataProvider();
 
 // Body parser with error handler for malformed JSON
 app.use(express.json());
@@ -26,6 +30,30 @@ function roundHalfUp(num: number, decimals: number): number {
 app.get('/api/health', (_req: Request, res: Response) => {
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.status(200).send('Amazon Product Analyzer is running!');
+});
+
+// Product details endpoint by ASIN (using ProductDataProvider abstraction)
+app.get('/api/products/:asin', async (req: Request, res: Response) => {
+  try {
+    const rawAsin = req.params.asin;
+    if (!rawAsin || typeof rawAsin !== 'string') {
+      return res.status(400).json({ error: 'ASIN parameter is required' });
+    }
+
+    const asin = rawAsin.trim().toUpperCase();
+    if (!/^[A-Z0-9]{10}$/.test(asin)) {
+      return res.status(400).json({
+        error: 'Invalid ASIN format. ASIN must be exactly 10 alphanumeric characters (e.g. B08XYZ1234)',
+      });
+    }
+
+    const productData = await productDataProvider.getProductByAsin(asin);
+    return res.status(200).json(productData);
+  } catch (err: any) {
+    return res.status(500).json({
+      error: err?.message || 'Failed to retrieve product data',
+    });
+  }
 });
 
 // Product analysis endpoint matching Spring Boot ProductAnalysisController & ProductAnalysisService
