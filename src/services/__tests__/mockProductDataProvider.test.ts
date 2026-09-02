@@ -23,3 +23,15 @@ test('MockProductDataProvider normalizes ASIN with whitespace and lowercase', as
   assert.ok(data.bsr && data.bsr > 0);
   assert.ok(data.estimatedMonthlySales && data.estimatedMonthlySales > 0);
 });
+
+test('MockProductDataProvider provides valid buyBoxPrice for defaulting selling price', async () => {
+  const provider = new MockProductDataProvider();
+  const item1 = await provider.getProductByAsin('B08XYZ1234');
+  assert.equal(item1.buyBoxPrice, 19.99);
+
+  const item2 = await provider.getProductByAsin('B09LMN4567');
+  assert.equal(item2.buyBoxPrice, 29.99);
+
+  const itemGeneric = await provider.getProductByAsin('B000000001');
+  assert.ok(typeof itemGeneric.buyBoxPrice === 'number' && itemGeneric.buyBoxPrice > 0);
+});

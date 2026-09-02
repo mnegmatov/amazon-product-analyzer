@@ -23,6 +23,8 @@ export const App: React.FC = () => {
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [productLoading, setProductLoading] = useState(false);
   const [productError, setProductError] = useState<string | null>(null);
+  const [isPriceFromProductData, setIsPriceFromProductData] = useState(false);
+  const lastLoadedAsinRef = React.useRef<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -42,6 +44,10 @@ export const App: React.FC = () => {
       // Ignore local storage quota limits
     }
   }, [history]);
+
+  const handleManualPriceEdit = () => {
+    setIsPriceFromProductData(false);
+  };
 
   const handleAnalyze = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -64,28 +70,37 @@ export const App: React.FC = () => {
       setInput((prev) => ({ ...prev, asin: trimmedAsin }));
     }
 
-    // 1. Fetch Amazon Product Data (MockProductDataProvider)
-    const fetchProductDetails = async (asinToFetch: string) => {
-      setProductLoading(true);
-      setProductError(null);
-      try {
-        const prodRes = await fetch(`/api/products/${encodeURIComponent(asinToFetch)}`, {
-          headers: { 'Accept': 'application/json' },
-        });
-        const prodData = await prodRes.json().catch(() => null);
-        if (!prodRes.ok) {
-          setProductError(prodData?.error || `Ошибка сервера при получении данных о товаре (${prodRes.status})`);
-        } else if (prodData) {
-          setProductData(prodData);
-        }
-      } catch (err: any) {
-        setProductError(`Не удалось соединиться с сервисом данных товара (${err?.message || 'Ошибка сети'}).`);
-      } finally {
-        setProductLoading(false);
-      }
-    };
+    const isNewProduct = trimmedAsin !== lastLoadedAsinRef.current;
+    let effectiveSellingPrice = Number(input.sellingPrice);
 
-    fetchProductDetails(trimmedAsin);
+    // 1. Fetch Amazon Product Data (MockProductDataProvider)
+    setProductLoading(true);
+    setProductError(null);
+    try {
+      const prodRes = await fetch(`/api/products/${encodeURIComponent(trimmedAsin)}`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      const prodData = await prodRes.json().catch(() => null);
+      if (!prodRes.ok) {
+        setProductError(prodData?.error || `Ошибка сервера при получении данных о товаре (${prodRes.status})`);
+      } else if (prodData) {
+        setProductData(prodData);
+        // Only populate the Selling Price from buyBoxPrice when a new product is successfully loaded
+        if (isNewProduct && prodData.buyBoxPrice != null && Number(prodData.buyBoxPrice) > 0) {
+          effectiveSellingPrice = Number(prodData.buyBoxPrice);
+          setInput((prev) => ({
+            ...prev,
+            sellingPrice: prodData.buyBoxPrice,
+          }));
+          setIsPriceFromProductData(true);
+        }
+        lastLoadedAsinRef.current = prodData.asin || trimmedAsin;
+      }
+    } catch (err: any) {
+      setProductError(`Не удалось соединиться с сервисом данных товара (${err?.message || 'Ошибка сети'}).`);
+    } finally {
+      setProductLoading(false);
+    }
 
     // 2. Financial calculation (/api/products/analyze)
     setLoading(true);
@@ -94,7 +109,7 @@ export const App: React.FC = () => {
     try {
       const payload = {
         purchasePrice: Number(input.purchasePrice),
-        sellingPrice: Number(input.sellingPrice),
+        sellingPrice: effectiveSellingPrice,
         amazonFees: Number(input.amazonFees),
         fbaFee: Number(input.fbaFee),
         shipping: Number(input.shipping),
@@ -131,7 +146,7 @@ export const App: React.FC = () => {
           asin: (typeof input.asin === 'string' && input.asin.trim()) || undefined,
           input: {
             purchasePrice: Number(input.purchasePrice),
-            sellingPrice: Number(input.sellingPrice),
+            sellingPrice: effectiveSellingPrice,
             amazonFees: Number(input.amazonFees),
             fbaFee: Number(input.fbaFee),
             shipping: Number(input.shipping),
@@ -164,6 +179,8 @@ export const App: React.FC = () => {
     setInput(preset);
     setErrors({});
     setProductError(null);
+    setIsPriceFromProductData(false);
+    lastLoadedAsinRef.current = null;
   };
 
   const handleClearHistory = () => {
@@ -191,6 +208,8 @@ export const App: React.FC = () => {
               loading={loading}
               errors={errors}
               onApplyPreset={handleApplyPreset}
+              isPriceFromProductData={isPriceFromProductData}
+              onManualPriceEdit={handleManualPriceEdit}
             />
 
             <HistoryList
@@ -199,6 +218,8 @@ export const App: React.FC = () => {
                 setInput(selected);
                 setErrors({});
                 setProductError(null);
+                setIsPriceFromProductData(false);
+                lastLoadedAsinRef.current = selected.asin || null;
               }}
               onClear={handleClearHistory}
             />

@@ -9,6 +9,8 @@ interface AnalyzerFormProps {
   loading: boolean;
   errors: Record<string, string>;
   onApplyPreset: (preset: ProductInput) => void;
+  isPriceFromProductData?: boolean;
+  onManualPriceEdit?: () => void;
 }
 
 const PRESETS: { label: string; data: ProductInput }[] = [
@@ -57,10 +59,15 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
   loading,
   errors,
   onApplyPreset,
+  isPriceFromProductData = false,
+  onManualPriceEdit,
 }) => {
   const [showOptional, setShowOptional] = useState(false);
 
   const handleChange = (field: keyof ProductInput, value: string) => {
+    if (field === 'sellingPrice' && onManualPriceEdit) {
+      onManualPriceEdit();
+    }
     setInput((prev) => ({
       ...prev,
       [field]: value === '' ? '' : value,
@@ -168,9 +175,17 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
 
           {/* Цена продажи */}
           <div>
-            <label className="block text-xs font-semibold text-slate-200 mb-1">
-              Цена продажи на Amazon ($) <span className="text-rose-400">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-200">
+                Цена продажи на Amazon ($) <span className="text-rose-400">*</span>
+              </label>
+              {isPriceFromProductData && (
+                <span className="text-[10px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded flex items-center gap-1" title="Цена автоматически подставлена из Buy Box товара">
+                  <Sparkles className="w-2.5 h-2.5 text-amber-400" />
+                  из Buy Box
+                </span>
+              )}
+            </div>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-sm">
                 $
@@ -185,12 +200,16 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
                 className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition ${
                   getFieldError('sellingPrice')
                     ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
+                    : isPriceFromProductData
+                    ? 'border-amber-500/60 focus:border-amber-500 focus:ring-amber-500/20'
                     : 'border-slate-800 focus:border-amber-500 focus:ring-amber-500/20'
                 }`}
                 required
               />
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Текущая цена в Buy Box на Amazon</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {isPriceFromProductData ? 'Заполнено из Buy Box (можно изменить)' : 'Текущая цена в Buy Box на Amazon'}
+            </p>
             {getFieldError('sellingPrice') && (
               <p className="text-[11px] text-rose-400 mt-0.5 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {getFieldError('sellingPrice')}
