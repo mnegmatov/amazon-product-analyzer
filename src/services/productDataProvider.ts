@@ -16,3 +16,5 @@ export interface ProductDataProvider {
 
 export type { ProductData };
 export { MockProductDataProvider } from './mockProductDataProvider.ts';
+export { AmazonProductDataProvider } from './amazonProductDataProvider.ts';
+export type { AmazonSpApiConfig } from './amazonProductDataProvider.ts';
