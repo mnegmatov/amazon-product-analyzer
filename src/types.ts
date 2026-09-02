@@ -75,3 +75,24 @@ export interface ProductData {
 export interface ProductDataProvider {
   getProductByAsin(asin: string): Promise<ProductData>;
 }
+
+export interface FeeCalculationInput {
+  product: ProductData;
+  sellingPrice: number;
+  shipping?: number;
+}
+
+export interface FeeBreakdown {
+  referralFee: number;
+  fbaFee: number;
+  variableClosingFee: number;
+  totalAmazonFees: number;
+  feePercentage: number;
+  isMockEstimate: boolean;
+  currency: string;
+  disclaimer: string;
+}
+
+export interface FeeCalculator {
+  calculateFees(input: FeeCalculationInput): Promise<FeeBreakdown> | FeeBreakdown;
+}
