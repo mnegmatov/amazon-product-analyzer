@@ -183,6 +183,28 @@ export const App: React.FC = () => {
     lastLoadedAsinRef.current = null;
   };
 
+  const handleReset = () => {
+    setInput({
+      title: '',
+      asin: '',
+      purchasePrice: '',
+      sellingPrice: '',
+      amazonFees: '',
+      fbaFee: '',
+      shipping: '',
+    });
+    setResult(null);
+    setProductData(null);
+    setProductError(null);
+    setIsPriceFromProductData(false);
+    setErrors({});
+    lastLoadedAsinRef.current = null;
+  };
+
+  const handleRestoreBuyBox = () => {
+    setIsPriceFromProductData(true);
+  };
+
   const handleClearHistory = () => {
     setHistory([]);
     try {
@@ -210,6 +232,9 @@ export const App: React.FC = () => {
               onApplyPreset={handleApplyPreset}
               isPriceFromProductData={isPriceFromProductData}
               onManualPriceEdit={handleManualPriceEdit}
+              onReset={handleReset}
+              buyBoxPrice={productData?.buyBoxPrice ?? null}
+              onRestoreBuyBox={handleRestoreBuyBox}
             />
 
             <HistoryList
@@ -226,13 +251,13 @@ export const App: React.FC = () => {
           </div>
 
           {/* Right Column: Visual Result & Hierarchy */}
-          <div className="lg:col-span-6 sticky top-20 space-y-4">
+          <div className="lg:col-span-6 space-y-4 lg:sticky lg:top-20">
+            <ResultDisplay result={result} input={input} />
             <ProductDataCard
               product={productData}
               loading={productLoading}
               error={productError}
             />
-            <ResultDisplay result={result} input={input} />
           </div>
         </div>
       </main>

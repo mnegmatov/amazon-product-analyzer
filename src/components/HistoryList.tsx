@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { History, Trash2, ArrowUpRight, CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { ProductInput } from '../types.ts';
 
@@ -29,6 +29,31 @@ interface HistoryListProps {
 
 export const HistoryList: React.FC<HistoryListProps> = ({ items, onSelect, onClear }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const clearTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (clearTimerRef.current) {
+        clearTimeout(clearTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleClearClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirmClear) {
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+      setConfirmClear(false);
+      onClear();
+    } else {
+      setConfirmClear(true);
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+      clearTimerRef.current = setTimeout(() => {
+        setConfirmClear(false);
+      }, 3500);
+    }
+  };
 
   if (items.length === 0) {
     return null;
@@ -38,6 +63,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({ items, onSelect, onCle
     <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-3.5 sm:p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-slate-100 transition cursor-pointer"
         >
@@ -48,12 +74,17 @@ export const HistoryList: React.FC<HistoryListProps> = ({ items, onSelect, onCle
 
         {isOpen && (
           <button
-            onClick={onClear}
-            className="text-[11px] text-slate-500 hover:text-rose-400 flex items-center gap-1 transition px-2 py-0.5 rounded hover:bg-slate-800 cursor-pointer"
-            title="Очистить историю"
+            type="button"
+            onClick={handleClearClick}
+            className={`text-[11px] flex items-center gap-1 transition px-2 py-0.5 rounded cursor-pointer ${
+              confirmClear
+                ? 'bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/40'
+                : 'text-slate-500 hover:text-rose-400 hover:bg-slate-800'
+            }`}
+            title={confirmClear ? 'Нажмите ещё раз для подтверждения' : 'Очистить историю'}
           >
             <Trash2 className="w-3 h-3" />
-            <span>Очистить</span>
+            <span>{confirmClear ? 'Точно удалить?' : 'Очистить'}</span>
           </button>
         )}
       </div>
@@ -63,8 +94,9 @@ export const HistoryList: React.FC<HistoryListProps> = ({ items, onSelect, onCle
           {items.map((item) => {
             const isBuy = item.result.decision === 'BUY';
             return (
-              <div
+              <button
                 key={item.id}
+                type="button"
                 onClick={() =>
                   onSelect({
                     title: item.title,
@@ -76,7 +108,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({ items, onSelect, onCle
                     shipping: item.input.shipping,
                   })
                 }
-                className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/70 hover:border-amber-500/40 hover:bg-slate-950 transition cursor-pointer group flex items-center justify-between gap-2"
+                className="w-full text-left p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/70 hover:border-amber-500/40 hover:bg-slate-950 focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition cursor-pointer group flex items-center justify-between gap-2"
                 title="Загрузить параметры"
               >
                 <div className="min-w-0 flex-1">
@@ -85,7 +117,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({ items, onSelect, onCle
                       {item.title}
                     </span>
                     {item.asin && (
-                      <span className="text-[9px] px-1 py-0.2 bg-slate-800/80 text-slate-400 rounded font-mono">
+                      <span className="text-[9px] px-1 py-[1px] bg-slate-800/80 text-slate-400 rounded font-mono">
                         {item.asin}
                       </span>
                     )}
@@ -95,7 +127,11 @@ export const HistoryList: React.FC<HistoryListProps> = ({ items, onSelect, onCle
                     <span>
                       Прибыль:{' '}
                       <strong className={isBuy ? 'text-emerald-400' : 'text-rose-400'}>
-                        {item.result.profit > 0 ? '+' : ''}${item.result.profit.toFixed(2)}
+                        {item.result.profit > 0
+                          ? `+$${item.result.profit.toFixed(2)}`
+                          : item.result.profit < 0
+                          ? `-$${Math.abs(item.result.profit).toFixed(2)}`
+                          : `$0.00`}
                       </strong>
                     </span>
                     <span>ROI: <strong>{item.result.roi.toFixed(1)}%</strong></span>
@@ -115,7 +151,7 @@ export const HistoryList: React.FC<HistoryListProps> = ({ items, onSelect, onCle
                   </span>
                   <ArrowUpRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-amber-400 transition" />
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>

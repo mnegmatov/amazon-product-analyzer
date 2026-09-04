@@ -11,6 +11,9 @@ interface AnalyzerFormProps {
   onApplyPreset: (preset: ProductInput) => void;
   isPriceFromProductData?: boolean;
   onManualPriceEdit?: () => void;
+  onReset?: () => void;
+  buyBoxPrice?: number | null;
+  onRestoreBuyBox?: () => void;
 }
 
 const PRESETS: { label: string; data: ProductInput }[] = [
@@ -61,16 +64,20 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
   onApplyPreset,
   isPriceFromProductData = false,
   onManualPriceEdit,
+  onReset,
+  buyBoxPrice,
+  onRestoreBuyBox,
 }) => {
   const [showOptional, setShowOptional] = useState(false);
 
   const handleChange = (field: keyof ProductInput, value: string) => {
+    const normalizedValue = field === 'asin' ? value.toUpperCase() : value;
     if (field === 'sellingPrice' && onManualPriceEdit) {
       onManualPriceEdit();
     }
     setInput((prev) => ({
       ...prev,
-      [field]: value === '' ? '' : value,
+      [field]: normalizedValue === '' ? '' : normalizedValue,
     }));
   };
 
@@ -93,7 +100,7 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
           <p className="text-xs text-slate-400 mt-0.5">Введите цены и комиссии для быстрой проверки</p>
         </div>
 
-        {/* Quick Presets */}
+        {/* Quick Presets & Reset */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] text-slate-400 flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-amber-400" /> Примеры:
@@ -108,17 +115,28 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
               {p.label}
             </button>
           ))}
+          {onReset && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="text-xs px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition cursor-pointer font-medium"
+              title="Сбросить все параметры"
+            >
+              Сбросить
+            </button>
+          )}
         </div>
       </div>
 
       <form onSubmit={onAnalyze} className="mt-4 space-y-4">
         {/* ASIN Input */}
         <div>
-          <label className="block text-xs font-semibold text-slate-200 mb-1">
+          <label htmlFor="asin" className="block text-xs font-semibold text-slate-200 mb-1">
             ASIN <span className="text-rose-400">*</span>
           </label>
           <div className="relative">
             <input
+              id="asin"
               type="text"
               placeholder="B08XYZ1234"
               value={input.asin || ''}
@@ -143,7 +161,7 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           {/* Цена закупки */}
           <div>
-            <label className="block text-xs font-semibold text-slate-200 mb-1">
+            <label htmlFor="purchasePrice" className="block text-xs font-semibold text-slate-200 mb-1">
               Цена закупки ($) <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
@@ -151,13 +169,15 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
                 $
               </span>
               <input
+                id="purchasePrice"
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0.01"
                 placeholder="6.67"
                 value={input.purchasePrice}
                 onChange={(e) => handleChange('purchasePrice', e.target.value)}
-                className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition ${
+                className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                   getFieldError('purchasePrice')
                     ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
                     : 'border-slate-800 focus:border-amber-500 focus:ring-amber-500/20'
@@ -175,8 +195,8 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
 
           {/* Цена продажи */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold text-slate-200">
+            <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
+              <label htmlFor="sellingPrice" className="block text-xs font-semibold text-slate-200">
                 Цена продажи на Amazon ($) <span className="text-rose-400">*</span>
               </label>
               {isPriceFromProductData && (
@@ -185,19 +205,34 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
                   из Buy Box
                 </span>
               )}
+              {!isPriceFromProductData && buyBoxPrice != null && Number(buyBoxPrice) > 0 && Number(input.sellingPrice) !== Number(buyBoxPrice) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleChange('sellingPrice', String(buyBoxPrice));
+                    if (onRestoreBuyBox) onRestoreBuyBox();
+                  }}
+                  className="text-[10px] font-medium text-amber-400 hover:text-amber-300 underline underline-offset-2 decoration-amber-500/40 cursor-pointer"
+                  title="Восстановить исходную цену из Buy Box"
+                >
+                  Восстановить Buy Box (${Number(buyBoxPrice).toFixed(2)})
+                </button>
+              )}
             </div>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-sm">
                 $
               </span>
               <input
+                id="sellingPrice"
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0.01"
                 placeholder="19.99"
                 value={input.sellingPrice}
                 onChange={(e) => handleChange('sellingPrice', e.target.value)}
-                className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition ${
+                className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                   getFieldError('sellingPrice')
                     ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
                     : isPriceFromProductData
@@ -222,7 +257,7 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Комиссия Amazon */}
           <div>
-            <label className="block text-xs font-semibold text-slate-200 mb-1">
+            <label htmlFor="amazonFees" className="block text-xs font-semibold text-slate-200 mb-1">
               Комиссия Amazon ($) <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
@@ -230,16 +265,18 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
                 $
               </span>
               <input
+                id="amazonFees"
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0.00"
                 placeholder="3.00"
                 value={input.amazonFees}
                 onChange={(e) => handleChange('amazonFees', e.target.value)}
-                className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition ${
+                className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                   getFieldError('amazonFees')
-                    ? 'border-rose-500 focus:border-rose-500'
-                    : 'border-slate-800 focus:border-amber-500'
+                    ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
+                    : 'border-slate-800 focus:border-amber-500 focus:ring-amber-500/20'
                 }`}
                 required
               />
@@ -254,7 +291,7 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
 
           {/* FBA сбор */}
           <div>
-            <label className="block text-xs font-semibold text-slate-200 mb-1">
+            <label htmlFor="fbaFee" className="block text-xs font-semibold text-slate-200 mb-1">
               FBA сбор ($) <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
@@ -262,16 +299,18 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
                 $
               </span>
               <input
+                id="fbaFee"
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0.00"
                 placeholder="4.10"
                 value={input.fbaFee}
                 onChange={(e) => handleChange('fbaFee', e.target.value)}
-                className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition ${
+                className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                   getFieldError('fbaFee')
-                    ? 'border-rose-500 focus:border-rose-500'
-                    : 'border-slate-800 focus:border-amber-500'
+                    ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
+                    : 'border-slate-800 focus:border-amber-500 focus:ring-amber-500/20'
                 }`}
                 required
               />
@@ -286,7 +325,7 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
 
           {/* Доставка */}
           <div>
-            <label className="block text-xs font-semibold text-slate-200 mb-1">
+            <label htmlFor="shipping" className="block text-xs font-semibold text-slate-200 mb-1">
               Доставка ($) <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
@@ -294,16 +333,18 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
                 $
               </span>
               <input
+                id="shipping"
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0.00"
                 placeholder="1.50"
                 value={input.shipping}
                 onChange={(e) => handleChange('shipping', e.target.value)}
-                className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition ${
+                className={`w-full pl-7 pr-3 py-2 text-sm bg-slate-950 border rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                   getFieldError('shipping')
-                    ? 'border-rose-500 focus:border-rose-500'
-                    : 'border-slate-800 focus:border-amber-500'
+                    ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
+                    : 'border-slate-800 focus:border-amber-500 focus:ring-amber-500/20'
                 }`}
                 required
               />
@@ -331,15 +372,16 @@ export const AnalyzerForm: React.FC<AnalyzerFormProps> = ({
           {showOptional && (
             <div className="mt-2 pt-2.5 border-t border-slate-800/60">
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">
+                <label htmlFor="productTitle" className="block text-[11px] text-slate-400 mb-1">
                   Название товара
                 </label>
                 <input
+                  id="productTitle"
                   type="text"
                   placeholder="Беспроводная мышь"
                   value={input.title || ''}
                   onChange={(e) => handleChange('title', e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20"
                 />
               </div>
             </div>

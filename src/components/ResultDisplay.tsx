@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   XCircle,
   TrendingUp,
+  TrendingDown,
   PieChart,
   HelpCircle,
 } from 'lucide-react';
@@ -54,8 +55,12 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, input }) =
         }`}
       >
         <div className="flex items-center justify-center gap-3">
-          <span className="text-3xl sm:text-4xl">{isBuy ? '🟢' : '🔴'}</span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight uppercase">
+          {isBuy ? (
+            <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400 shrink-0" aria-hidden="true" />
+          ) : (
+            <XCircle className="w-8 h-8 sm:w-10 sm:h-10 text-rose-400 shrink-0" aria-hidden="true" />
+          )}
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight uppercase whitespace-nowrap">
             {isBuy ? 'ПОКУПАТЬ' : 'НЕ ПОКУПАТЬ'}
           </h2>
         </div>
@@ -71,7 +76,11 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, input }) =
                 result.profit > 0 ? 'text-emerald-400' : 'text-rose-400'
               }`}
             >
-              {result.profit > 0 ? '+' : ''}${result.profit.toFixed(2)}
+              {result.profit > 0
+                ? `+$${result.profit.toFixed(2)}`
+                : result.profit < 0
+                ? `-$${Math.abs(result.profit).toFixed(2)}`
+                : `$${result.profit.toFixed(2)}`}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">с 1 единицы</span>
           </div>
@@ -89,7 +98,11 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, input }) =
                   : 'text-rose-400'
               }`}
             >
-              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 -mr-0.5" />
+              {result.roi >= 30 ? (
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 -mr-0.5" aria-hidden="true" />
+              ) : (
+                <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 -mr-0.5" aria-hidden="true" />
+              )}
               <span>{result.roi.toFixed(1)}%</span>
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
@@ -162,7 +175,11 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, input }) =
                   {result.profit <= 0 ? '✕' : '✓'}
                 </span>
                 <span>
-                  {result.profit <= 0 ? `Прибыль отрицательная (-$${Math.abs(result.profit).toFixed(2)})` : `Прибыль положительная (+$${result.profit.toFixed(2)})`}
+                  {result.profit < 0
+                    ? `Прибыль отрицательная (-$${Math.abs(result.profit).toFixed(2)})`
+                    : result.profit === 0
+                    ? 'Прибыль нулевая ($0.00)'
+                    : `Прибыль положительная (+$${result.profit.toFixed(2)})`}
                 </span>
               </div>
             </div>
@@ -183,53 +200,67 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, input }) =
           <span>100%</span>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full h-2.5 rounded-full bg-slate-950 overflow-hidden flex p-0.5 border border-slate-800 gap-0.5">
-          <div
-            style={{ width: `${pPricePct}%` }}
-            className="bg-blue-500 rounded-l-full"
-            title={`Закупка: $${purchasePrice.toFixed(2)}`}
-          />
-          <div
-            style={{ width: `${aFeesPct}%` }}
-            className="bg-amber-500"
-            title={`Amazon: $${amazonFees.toFixed(2)}`}
-          />
-          <div
-            style={{ width: `${fFeePct}%` }}
-            className="bg-purple-500"
-            title={`FBA: $${fbaFee.toFixed(2)}`}
-          />
-          <div
-            style={{ width: `${shipPct}%` }}
-            className="bg-cyan-500"
-            title={`Доставка: $${shipping.toFixed(2)}`}
-          />
-          {result.profit > 0 ? (
+        {/* Progress Bar with robust rounded clipping */}
+        <div className="w-full h-2.5 rounded-full bg-slate-950 overflow-hidden border border-slate-800 p-0.5">
+          <div className="w-full h-full rounded-full overflow-hidden flex gap-0.5">
             <div
-              style={{ width: `${profitPct}%` }}
-              className="bg-emerald-500 rounded-r-full"
-              title={`Прибыль: $${result.profit.toFixed(2)}`}
+              style={{ width: `${pPricePct}%` }}
+              className="bg-indigo-400 shrink-0"
+              title={`Закупка: $${purchasePrice.toFixed(2)}`}
             />
-          ) : null}
+            <div
+              style={{ width: `${aFeesPct}%` }}
+              className="bg-amber-500 shrink-0"
+              title={`Amazon: $${amazonFees.toFixed(2)}`}
+            />
+            <div
+              style={{ width: `${fFeePct}%` }}
+              className="bg-orange-500 shrink-0"
+              title={`FBA: $${fbaFee.toFixed(2)}`}
+            />
+            <div
+              style={{ width: `${shipPct}%` }}
+              className="bg-slate-500 shrink-0"
+              title={`Доставка: $${shipping.toFixed(2)}`}
+            />
+            {result.profit > 0 ? (
+              <div
+                style={{ width: `${profitPct}%` }}
+                className="bg-emerald-400 shrink-0"
+                title={`Прибыль: $${result.profit.toFixed(2)}`}
+              />
+            ) : null}
+          </div>
         </div>
 
-        {/* Legend */}
-        <div className="mt-2.5 flex items-center justify-between flex-wrap gap-2 text-[10px] text-slate-400">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-xs bg-blue-500" /> Закупка: ${purchasePrice.toFixed(2)}
+        {/* Legend in structured responsive grid */}
+        <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1.5 text-[10px] text-slate-400">
+          <span className="flex items-center gap-1.5 truncate">
+            <span className="w-2 h-2 rounded-xs bg-indigo-400 shrink-0" />
+            <span>Закупка: ${purchasePrice.toFixed(2)}</span>
           </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-xs bg-amber-500" /> Amazon: ${amazonFees.toFixed(2)}
+          <span className="flex items-center gap-1.5 truncate">
+            <span className="w-2 h-2 rounded-xs bg-amber-500 shrink-0" />
+            <span>Amazon: ${amazonFees.toFixed(2)}</span>
           </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-xs bg-purple-500" /> FBA: ${fbaFee.toFixed(2)}
+          <span className="flex items-center gap-1.5 truncate">
+            <span className="w-2 h-2 rounded-xs bg-orange-500 shrink-0" />
+            <span>FBA: ${fbaFee.toFixed(2)}</span>
           </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-xs bg-cyan-500" /> Доставка: ${shipping.toFixed(2)}
+          <span className="flex items-center gap-1.5 truncate">
+            <span className="w-2 h-2 rounded-xs bg-slate-500 shrink-0" />
+            <span>Доставка: ${shipping.toFixed(2)}</span>
           </span>
-          <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-            <span className="w-2 h-2 rounded-xs bg-emerald-500" /> Прибыль: ${result.profit.toFixed(2)}
+          <span className="flex items-center gap-1.5 truncate text-emerald-400 font-semibold col-span-2 sm:col-span-1">
+            <span className="w-2 h-2 rounded-xs bg-emerald-400 shrink-0" />
+            <span>
+              Прибыль:{' '}
+              {result.profit > 0
+                ? `+$${result.profit.toFixed(2)}`
+                : result.profit < 0
+                ? `-$${Math.abs(result.profit).toFixed(2)}`
+                : `$0.00`}
+            </span>
           </span>
         </div>
       </div>

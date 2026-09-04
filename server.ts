@@ -5,7 +5,7 @@ import { createServer as createViteServer } from 'vite';
 import { ProductDataProvider, MockProductDataProvider } from './src/services/productDataProvider.ts';
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = 3000;
 
 // Data provider abstraction instance (currently using MockProductDataProvider)
 const productDataProvider: ProductDataProvider = new MockProductDataProvider();
@@ -134,7 +134,13 @@ app.post('/api/products/analyze', (req: Request, res: Response) => {
 
 // Helper to open the application in the default browser on development startup
 function openBrowser(url: string): void {
-  if (process.env.CI || process.env.BROWSER === 'none') {
+  if (
+    process.env.CI ||
+    process.env.BROWSER === 'none' ||
+    process.env.CONTAINER ||
+    process.env.KUBERNETES_SERVICE_HOST ||
+    !process.stdout.isTTY
+  ) {
     return;
   }
 

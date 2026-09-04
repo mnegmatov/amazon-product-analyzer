@@ -58,7 +58,14 @@ export const ProductDataCard: React.FC<ProductDataCardProps> = ({
   }
 
   if (!product) {
-    return null;
+    return (
+      <div className="bg-slate-900/40 border border-dashed border-slate-800/70 rounded-2xl p-4 text-center">
+        <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+          <Package className="w-3.5 h-3.5 text-slate-600" />
+          <span>Данные о товаре Amazon (BSR, продажи, Buy Box) отобразятся после анализа ASIN</span>
+        </div>
+      </div>
+    );
   }
 
   const formatWeight = () => {

@@ -29,21 +29,23 @@ export const Header: React.FC = () => {
 
   return (
     <header className="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-30 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20 text-slate-950 font-bold">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2.5 sm:py-0 flex items-center justify-between gap-3">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 flex-shrink-0 flex items-center justify-center shadow-lg shadow-amber-500/20 text-slate-950 font-bold">
             <ShoppingBag className="w-5 h-5 text-slate-950 stroke-[2.2]" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center space-x-2">
-              <h1 className="text-base sm:text-lg font-bold text-slate-100 tracking-tight">
-                AMAZON PRODUCT ANALYZER
+              <h1 className="text-base sm:text-lg font-bold text-slate-100 tracking-tight truncate">
+                Amazon Product Analyzer
               </h1>
-              <span className="hidden sm:inline-block text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <span className="hidden sm:inline-block text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex-shrink-0">
                 FBA Калькулятор
               </span>
             </div>
-            <p className="text-xs text-slate-400">Проверьте товар перед покупкой и рассчитайте чистую прибыль</p>
+            <p className="hidden sm:block text-xs text-slate-400 truncate">
+              Проверьте товар перед покупкой и рассчитайте чистую прибыль
+            </p>
           </div>
         </div>
 
