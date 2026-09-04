@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
+import { exec } from 'child_process';
 import { createServer as createViteServer } from 'vite';
 import { ProductDataProvider, MockProductDataProvider } from './src/services/productDataProvider.ts';
 
@@ -131,9 +132,34 @@ app.post('/api/products/analyze', (req: Request, res: Response) => {
   });
 });
 
+// Helper to open the application in the default browser on development startup
+function openBrowser(url: string): void {
+  if (process.env.CI || process.env.BROWSER === 'none') {
+    return;
+  }
+
+  const platform = process.platform;
+  let command = '';
+
+  if (platform === 'darwin') {
+    command = `open "${url}"`;
+  } else if (platform === 'win32') {
+    command = `start "" "${url}"`;
+  } else {
+    // Linux and other Unix-like systems
+    command = `xdg-open "${url}"`;
+  }
+
+  exec(command, () => {
+    // Non-fatal: if opening the browser fails (e.g. headless/container), don't crash the server
+  });
+}
+
 // Vite middleware & Static Serving
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -148,7 +174,12 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Amazon Product Analyzer server running on http://0.0.0.0:${PORT}`);
+    const localUrl = `http://localhost:${PORT}`;
+    console.log(`Amazon Product Analyzer server running on ${localUrl}`);
+
+    if (!isProduction) {
+      openBrowser(localUrl);
+    }
   });
 }
 
